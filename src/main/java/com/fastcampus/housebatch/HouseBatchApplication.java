@@ -6,7 +6,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.util.Assert;
 @EnableBatchProcessing
-@EnableJpaAuditing
 @SpringBootApplication
 public class HouseBatchApplication {
 
