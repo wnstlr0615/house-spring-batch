@@ -1,9 +1,6 @@
 package com.fastcampus.housebatch.core.domain;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
 
@@ -12,6 +9,7 @@ import javax.persistence.*;
 @AllArgsConstructor
 @Builder
 @Getter
+@ToString
 public class Lawd extends BaseTimeEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long lawdId;
@@ -23,6 +21,10 @@ public class Lawd extends BaseTimeEntity {
     private String lawdDong;
 
     @Column(nullable = false)
-    private boolean exist;
+    private Boolean exist;
 
+    public void update(Lawd lawd) {
+        this.lawdDong=lawd.getLawdDong();
+        this.exist= lawd.getExist();
+    }
 }
