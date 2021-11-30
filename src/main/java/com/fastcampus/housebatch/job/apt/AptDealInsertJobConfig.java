@@ -7,10 +7,7 @@ import com.fastcampus.housebatch.validator.LawdCdParameterValidator;
 import com.fastcampus.housebatch.validator.YearMonthParameterValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.JobParametersValidator;
-import org.springframework.batch.core.Step;
-import org.springframework.batch.core.StepContribution;
+import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
@@ -19,6 +16,7 @@ import org.springframework.batch.core.job.CompositeJobParametersValidator;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.xml.StaxEventItemReader;
 import org.springframework.batch.item.xml.builder.StaxEventItemReaderBuilder;
@@ -30,6 +28,7 @@ import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 
 import java.time.YearMonth;
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
@@ -42,12 +41,15 @@ public class AptDealInsertJobConfig {
     @Bean
     public Job aptDealInsertJob(
             Step aptDealInsertStep,
-            Step guLawdCdStep
+            Step guLawdCdStep,
+            Step contextPrintStep
     ){
         return jobBuilderFactory.get("aptDealInsertJob")
                 .incrementer(new RunIdIncrementer())
                 .validator(aptDealJobParameterValidator())
                 .start(guLawdCdStep)
+                .next(contextPrintStep)
+                .next(aptDealInsertStep)
 //                .start(aptDealInsertStep)
                 .build();
     }
@@ -55,7 +57,6 @@ public class AptDealInsertJobConfig {
         CompositeJobParametersValidator validator = new CompositeJobParametersValidator();
         validator.setValidators(
                 Arrays.asList(
-                        new LawdCdParameterValidator(),
                         new YearMonthParameterValidator()
                 )
         );
@@ -73,8 +74,30 @@ public class AptDealInsertJobConfig {
     @StepScope
     public Tasklet guLawdCdTasklet(){
         return (contribution, chunkContext) ->{
-            lawdRepository.findDistinctGuLawdCd()
-                    .forEach(System.out::println);
+            StepExecution stepExecution = chunkContext.getStepContext().getStepExecution();
+            ExecutionContext executionContext = stepExecution.getJobExecution().getExecutionContext();
+
+            List<String> guLawdCds = lawdRepository.findDistinctGuLawdCd();
+            executionContext.putString("guLawdCd", guLawdCds.get(0));
+
+            return RepeatStatus.FINISHED;
+        };
+    }
+    @Bean
+    @JobScope
+    public Step contextPrintStep(Tasklet contextPrintTasklet){
+        return stepBuilderFactory.get("contextPrintStep")
+                .tasklet(contextPrintTasklet)
+                .build();
+    }
+
+    @Bean
+    @StepScope
+    public Tasklet contextPrintTasklet(
+            @Value("#{jobExecutionContext['guLawdCd']}") String guLawdCd
+    ){
+        return (contribution, chunkContext) -> {
+            System.out.println("[contextPrintTasklet] guLawdCd : "+ guLawdCd);
             return RepeatStatus.FINISHED;
         };
     }
@@ -98,12 +121,12 @@ public class AptDealInsertJobConfig {
     public StaxEventItemReader<AptDealDto> aptDealResourceReader(
             @Value("#{jobParameters['filePath']}") String filePath,
             Jaxb2Marshaller aptDealDtoMarshaller,
-            @Value("#{jobParameters['lawdCd']}") String lawdCd,
+            @Value("#{jobExecutionContext['guLawdCd']}") String guLawdCd,
             @Value("#{jobParameters['yearMonth']}") String yearMonth
     ){
         return new StaxEventItemReaderBuilder<AptDealDto>()
                 .name("aptDealResourceReader")
-                .resource(apartmentApiResource.getResource(lawdCd, YearMonth.parse(yearMonth)))
+                .resource(apartmentApiResource.getResource(guLawdCd, YearMonth.parse(yearMonth)))
                 .addFragmentRootElements("item")
                 .unmarshaller(aptDealDtoMarshaller)
                 .build();
