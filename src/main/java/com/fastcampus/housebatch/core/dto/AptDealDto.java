@@ -2,9 +2,12 @@ package com.fastcampus.housebatch.core.dto;
 
 import lombok.Getter;
 import lombok.ToString;
+import org.springframework.util.StringUtils;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 /** 아파트 실거래가 API의 각가의 거래 정보를 담는 객체 */
 @ToString
@@ -49,4 +52,23 @@ public class AptDealDto {
 
     @XmlElement(name = "해제여부")
     private String dealCanceled;
+
+    public LocalDate getDealDate(){
+        return LocalDate.of(year, month, day);
+    }
+
+    public Long getDealAmount(){
+        return Long.parseLong(dealAmount.replaceAll(",","").trim());
+    }
+
+    public boolean isDealCanceled(){
+        return "0".equals(dealCanceled);
+    }
+
+    public LocalDate getDealCanceledDate(){
+        if(!StringUtils.hasText(dealCanceledDate)){
+            return null;
+        }
+        return LocalDate.parse(dealCanceledDate.trim(), DateTimeFormatter.ofPattern("yy.MM.dd"));
+    }
 }

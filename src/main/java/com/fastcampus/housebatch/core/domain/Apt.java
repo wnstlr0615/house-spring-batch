@@ -1,5 +1,6 @@
 package com.fastcampus.housebatch.core.domain;
 
+import com.fastcampus.housebatch.core.dto.AptDealDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,9 +26,19 @@ public class Apt extends BaseTimeEntity{
     @Column(nullable = false, length = 40)
     private String dong;
 
-    @Column(nullable = false, unique = true, length = 5)
+    @Column(nullable = false, length = 5)
     private String guLawdCd;
 
     @Column(nullable = false)
     private int builtYear;
+
+    public static Apt of(AptDealDto dto){
+        return Apt.builder()
+                .aptName(dto.getAptName().trim())
+                .jibun(dto.getJibun().trim())
+                .dong(dto.getDong().trim())
+                .guLawdCd(dto.getRegionalCode().trim())
+                .builtYear(dto.getBuiltYear())
+                .build();
+    }
 }

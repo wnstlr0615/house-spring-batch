@@ -1,12 +1,12 @@
 package com.fastcampus.housebatch.core.domain;
 
+import com.fastcampus.housebatch.core.dto.AptDealDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
@@ -37,6 +37,23 @@ public class AptDeal extends BaseTimeEntity{
     @Column(nullable = false)
     private boolean dealCanceled=false;
 
+    @Column
     private LocalDate dealCanceledDate;
 
+    public static AptDeal from(AptDealDto dto, Apt apt){
+        return AptDeal.builder()
+                .apt(apt)
+                .exclusiveArea(dto.getExclusiveArea())
+                .dealDate(dto.getDealDate())
+                .dealAmount(dto.getDealAmount())
+                .floor(dto.getFloor())
+                .dealCanceled(dto.isDealCanceled())
+                .dealCanceledDate(dto.getDealCanceledDate())
+                .build();
+    }
+
+    public void update(AptDealDto dto){
+        this.dealCanceled= dto.isDealCanceled();
+        this.dealCanceledDate=dto.getDealCanceledDate();
+    }
 }
