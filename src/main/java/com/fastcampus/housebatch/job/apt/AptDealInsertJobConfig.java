@@ -3,32 +3,27 @@ package com.fastcampus.housebatch.job.apt;
 import com.fastcampus.housebatch.adapter.ApartmentApiResource;
 import com.fastcampus.housebatch.core.dto.AptDealDto;
 import com.fastcampus.housebatch.core.repository.LawdRepository;
-import com.fastcampus.housebatch.validator.LawdCdParameterValidator;
+import com.fastcampus.housebatch.core.service.AptDealService;
 import com.fastcampus.housebatch.validator.YearMonthParameterValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.core.*;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
-import org.springframework.batch.core.job.CompositeJobParametersValidator;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
-import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
-import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.xml.StaxEventItemReader;
 import org.springframework.batch.item.xml.builder.StaxEventItemReaderBuilder;
-import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 
 import java.time.YearMonth;
-import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
@@ -40,14 +35,13 @@ public class AptDealInsertJobConfig {
     @Bean
     public Job aptDealInsertJob(
             Step guLawdCdStep,
-            Step contextPrintStep,
             Step aptDealInsertStep
             ){
         return jobBuilderFactory.get("aptDealInsertJob")
                 .incrementer(new RunIdIncrementer())
                 .validator(new YearMonthParameterValidator())
                 .start(guLawdCdStep)
-                .on("CONTINUABLE").to(contextPrintStep).next(guLawdCdStep)
+                .on("CONTINUABLE").to(aptDealInsertStep).next(guLawdCdStep)
                 .from(guLawdCdStep)
                 .on("*").end()
                 .end().build();
@@ -71,24 +65,6 @@ public class AptDealInsertJobConfig {
     public Tasklet guLawdCdTasklet(LawdRepository lawdRepository){
         return new GuLawdTasklet(lawdRepository);
     }
-    @Bean
-    @JobScope
-    public Step contextPrintStep(Tasklet contextPrintTasklet){
-        return stepBuilderFactory.get("contextPrintStep")
-                .tasklet(contextPrintTasklet)
-                .build();
-    }
-
-    @Bean
-    @StepScope
-    public Tasklet contextPrintTasklet(
-            @Value("#{jobExecutionContext['guLawdCd']}") String guLawdCd
-    ){
-        return (contribution, chunkContext) -> {
-            System.out.println("[contextPrintTasklet] guLawdCd : "+ guLawdCd);
-            return RepeatStatus.FINISHED;
-        };
-    }
 
     @Bean
     @JobScope
@@ -107,7 +83,6 @@ public class AptDealInsertJobConfig {
     @Bean
     @StepScope
     public StaxEventItemReader<AptDealDto> aptDealResourceReader(
-            @Value("#{jobParameters['filePath']}") String filePath,
             Jaxb2Marshaller aptDealDtoMarshaller,
             @Value("#{jobExecutionContext['guLawdCd']}") String guLawdCd,
             @Value("#{jobParameters['yearMonth']}") String yearMonth
@@ -130,10 +105,9 @@ public class AptDealInsertJobConfig {
 
     @Bean
     @StepScope
-    public ItemWriter<AptDealDto> aptDealWriter(){
+    public ItemWriter<AptDealDto> aptDealWriter(AptDealService aptDealService){
         return items -> {
-            items.forEach(System.out::println);
-            System.out.println("=========================");
+            items.forEach(aptDealService::upsert);
         };
     }
 }
