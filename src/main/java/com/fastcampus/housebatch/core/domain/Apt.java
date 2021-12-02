@@ -35,7 +35,7 @@ public class Apt extends BaseTimeEntity{
     public static Apt of(AptDealDto dto){
         return Apt.builder()
                 .aptName(dto.getAptName().trim())
-                .jibun(dto.getJibun().trim())
+                .jibun(dto.getJiBun().trim())
                 .dong(dto.getDong().trim())
                 .guLawdCd(dto.getRegionalCode().trim())
                 .builtYear(dto.getBuiltYear())

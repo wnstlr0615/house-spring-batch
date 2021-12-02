@@ -33,7 +33,7 @@ public class AptDealService {
     private Apt getAptorNew(AptDealDto dto) {
         Apt apt = aptRepository.findAptByAptNameAndJibun(
                 dto.getAptName(),
-                dto.getJibun()
+                dto.getJiBun()
         ).orElse(Apt.of(dto));
         aptRepository.save(apt);
         return apt;

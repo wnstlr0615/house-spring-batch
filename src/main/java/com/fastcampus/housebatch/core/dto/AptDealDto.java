@@ -71,4 +71,8 @@ public class AptDealDto {
         }
         return LocalDate.parse(dealCanceledDate.trim(), DateTimeFormatter.ofPattern("yy.MM.dd"));
     }
+
+    public String getJiBun(){
+        return !StringUtils.hasText(jibun)?jibun:null;
+    }
 }
