@@ -1,9 +1,6 @@
 package com.fastcampus.housebatch.core.domain;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
 
@@ -12,6 +9,7 @@ import javax.persistence.*;
 @AllArgsConstructor
 @Builder
 @Getter
+@ToString
 public class AptNotification extends BaseTimeEntity{
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long aptNotificationId;
@@ -19,7 +17,7 @@ public class AptNotification extends BaseTimeEntity{
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false, unique = true, length = 5)
+    @Column(nullable = false, length = 5)
     private String guLawdCd;
 
     @Column(nullable = false)
