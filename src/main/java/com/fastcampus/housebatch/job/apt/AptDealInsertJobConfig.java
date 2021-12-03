@@ -78,8 +78,6 @@ public class AptDealInsertJobConfig {
                 .build();
     }
 
-
-
     @Bean
     @StepScope
     public StaxEventItemReader<AptDealDto> aptDealResourceReader(
@@ -106,8 +104,6 @@ public class AptDealInsertJobConfig {
     @Bean
     @StepScope
     public ItemWriter<AptDealDto> aptDealWriter(AptDealService aptDealService){
-        return items -> {
-            items.forEach(aptDealService::upsert);
-        };
+        return items -> items.forEach(aptDealService::upsert);
     }
 }
